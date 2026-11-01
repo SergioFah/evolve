@@ -3,6 +3,7 @@ import { Icon, type IconName } from './components/Icon.tsx'
 import { PinScreen } from './components/PinScreen.tsx'
 import { SyncBadge } from './components/SyncBadge.tsx'
 import { Guitar } from './features/guitar/Guitar.tsx'
+import { Calisthenics } from './features/calisthenics/Calisthenics.tsx'
 import { Meditation } from './features/meditation/Meditation.tsx'
 import { useAppData } from './hooks/useAppData.ts'
 import { cloudEnabled } from './lib/cloud.ts'
@@ -11,11 +12,12 @@ import { readString, removeKey, writeString } from './lib/storage.ts'
 const PIN_KEY = 'evolve:pin'
 const TAB_KEY = 'evolve:tab'
 
-type Tab = 'meditation' | 'guitar'
+type Tab = 'meditation' | 'guitar' | 'calisthenics'
 
 const TABS: { id: Tab; label: string; icon: IconName; active: string }[] = [
   { id: 'meditation', label: 'Meditação', icon: 'person', active: 'text-cyan-300' },
   { id: 'guitar', label: 'Guitarra', icon: 'music', active: 'text-amber-400' },
+  { id: 'calisthenics', label: 'Calistenia', icon: 'dumbbell', active: 'text-emerald-400' },
 ]
 
 export default function App() {
@@ -45,7 +47,10 @@ export default function App() {
 
 function Shell({ pin, onPinRejected }: { pin: string | null; onPinRejected: () => void }) {
   const { data, update, status } = useAppData(pin, onPinRejected)
-  const [tab, setTab] = useState<Tab>(() => (readString(TAB_KEY) === 'guitar' ? 'guitar' : 'meditation'))
+  const [tab, setTab] = useState<Tab>(() => {
+    const saved = readString(TAB_KEY)
+    return TABS.some((t) => t.id === saved) ? (saved as Tab) : 'meditation'
+  })
 
   const selectTab = (t: Tab) => {
     setTab(t)
@@ -72,7 +77,7 @@ function Shell({ pin, onPinRejected }: { pin: string | null; onPinRejected: () =
             onChange={(cycles) => update((d) => ({ ...d, meditation: { cycles } }))}
           />
         ) : null}
-        {/* Guitar stays mounted so a running practice timer keeps going on the meditation tab */}
+        {/* Guitar stays mounted so a running practice timer keeps going on the other tabs */}
         <div hidden={tab !== 'guitar'}>
           <Guitar
             days={data.guitar}
@@ -81,10 +86,16 @@ function Shell({ pin, onPinRejected }: { pin: string | null; onPinRejected: () =
             onMetronomeChange={(metronome) => update((d) => ({ ...d, metronome }))}
           />
         </div>
+        {tab === 'calisthenics' && (
+          <Calisthenics
+            days={data.calisthenics}
+            onChange={(day, steps) => update((d) => ({ ...d, calisthenics: { ...d.calisthenics, [day]: steps } }))}
+          />
+        )}
       </main>
 
       <nav
-        className="grid grid-cols-2 border-t border-white/5 bg-[#0b0b0f]/95 backdrop-blur"
+        className="grid grid-cols-3 border-t border-white/5 bg-[#0b0b0f]/95 backdrop-blur"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {TABS.map((t) => (

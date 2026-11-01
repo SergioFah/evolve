@@ -3,6 +3,8 @@ const STROKE = {
   down: 'M6 9l6 6 6-6',
   x: 'M6 6l12 12M18 6L6 18',
   plus: 'M12 5v14M5 12h14',
+  minus: 'M5 12h14',
+  dumbbell: 'M6 6v12M18 6v12M3 9v6M21 9v6M6 12h12',
   trash: 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
   check: 'M5 12l5 5 9-10',
   pencil: 'M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4',

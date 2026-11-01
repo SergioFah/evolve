@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../../components/Icon.tsx'
 import { useCountdown } from '../../hooks/useCountdown.ts'
 import { useWakeLock } from '../../hooks/useWakeLock.ts'
-import { playGong } from '../../lib/audio.ts'
+import { playMeditationCue } from '../../lib/audio.ts'
 import { formatTime, vibrate } from '../../lib/data.ts'
 import type { Cycle } from '../../types.ts'
 
@@ -14,7 +14,7 @@ export function MeditationSession({ cycles, onExit }: { cycles: Cycle[]; onExit:
   const [index, setIndex] = useState(0)
   const [phase, setPhase] = useState<Phase>('breath')
   const timer = useCountdown(() => {
-    playGong()
+    playMeditationCue()
     vibrate([400, 200, 400])
     setPhase('retention')
   })

@@ -12,6 +12,7 @@ export function defaultData(): AppData {
     },
     guitar: { A: [], B: [] },
     metronome: { bpm: 80, beats: 4, subdivision: 1 },
+    calisthenics: { A: [], B: [] },
   }
 }
 
@@ -26,6 +27,8 @@ export function normalize(raw: unknown): AppData {
   const a = r.guitar?.A
   const b = r.guitar?.B
   const m = r.metronome
+  const ca = r.calisthenics?.A
+  const cb = r.calisthenics?.B
   return {
     meditation: { cycles: Array.isArray(cycles) ? cycles : defaultData().meditation.cycles },
     guitar: { A: Array.isArray(a) ? a : [], B: Array.isArray(b) ? b : [] },
@@ -34,6 +37,7 @@ export function normalize(raw: unknown): AppData {
       beats: clamp(Number(m?.beats ?? 4), 1, 7),
       subdivision: clamp(Number(m?.subdivision ?? 1), 1, 4),
     },
+    calisthenics: { A: Array.isArray(ca) ? ca : [], B: Array.isArray(cb) ? cb : [] },
   }
 }
 

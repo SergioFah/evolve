@@ -10,7 +10,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png', 'logo.svg'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png', 'logo.svg', '*.mp3'],
       manifest: {
         name: 'Evolve',
         short_name: 'Evolve',

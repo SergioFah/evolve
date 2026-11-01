@@ -9,9 +9,52 @@ function audio() {
   return ctx
 }
 
-// Android only allows audio after a user gesture: call this from a click handler
+const SOUND_FILES = {
+  meditation: `${import.meta.env.BASE_URL}meditation.mp3`,
+  exercise: `${import.meta.env.BASE_URL}exercise.mp3`,
+}
+
+const buffers = new Map<string, Promise<AudioBuffer | null>>()
+
+function loadSound(url: string) {
+  let buffer = buffers.get(url)
+  if (!buffer) {
+    const ac = audio()
+    buffer = fetch(url)
+      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(r.statusText))))
+      .then((data) => ac.decodeAudioData(data))
+      .catch(() => null)
+    buffers.set(url, buffer)
+  }
+  return buffer
+}
+
+// Falls back to the synthesized sound if the file is missing or can't be decoded
+async function playFile(url: string, fallback: () => void) {
+  const buffer = await loadSound(url)
+  if (!buffer) return fallback()
+  const ac = audio()
+  const source = ac.createBufferSource()
+  source.buffer = buffer
+  source.connect(ac.destination)
+  source.start()
+}
+
+// Android only allows audio after a user gesture: call this from a click handler.
+// Also preloads the sound files so the first cue plays without delay.
 export function unlockAudio() {
   audio()
+  for (const url of Object.values(SOUND_FILES)) void loadSound(url)
+}
+
+// End of a breathing phase
+export function playMeditationCue() {
+  void playFile(SOUND_FILES.meditation, playGong)
+}
+
+// End of a rest period
+export function playExerciseCue() {
+  void playFile(SOUND_FILES.exercise, playBeep)
 }
 
 // Singing-bowl style bell: inharmonic partials with long decays

@@ -22,8 +22,22 @@ export type MetronomeSettings = {
   subdivision: number
 }
 
+export type Exercise = {
+  id: string
+  name: string
+}
+
+// One exercise = single; two or more = superset, alternated set by set
+export type WorkoutStep = {
+  id: string
+  exercises: Exercise[]
+  sets: number
+  restSeconds: number
+}
+
 export type AppData = {
   meditation: { cycles: Cycle[] }
   guitar: Record<DayKey, GuitarTask[]>
   metronome: MetronomeSettings
+  calisthenics: Record<DayKey, WorkoutStep[]>
 }
