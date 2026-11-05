@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from 'react'
 import { playChord } from '../../lib/audio.ts'
 import { readString, writeString } from '../../lib/storage.ts'
-import { KEYS, triadFrequencies } from './keys.ts'
+import { alterNote, type ChordQuality, chordFrequencies, KEYS, type Key, triadFrequencies } from './keys.ts'
 
 const VOLUME_KEY = 'evolve:chordVolume'
 
@@ -13,6 +13,82 @@ function savedVolume() {
 
 const DEGREES = ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°']
 const CHORD_SUFFIX = ['', 'm', 'm', '', '', 'm', 'dim']
+
+type Extra = {
+  roman: string
+  degree: number
+  shift: number
+  quality: ChordQuality
+  hint: (k: Key) => string
+}
+
+const SUFFIX: Record<ChordQuality, string> = { maj: '', min: 'm', dom7: '7' }
+
+// Name of the diatonic chord on a degree, e.g. "Dm" for degree 1 in C
+const diatonic = (k: Key, degree: number) =>
+  k.scale[degree] + (CHORD_SUFFIX[degree] === 'dim' ? '°' : CHORD_SUFFIX[degree])
+
+const secondary = (target: number, roman: string): Extra => ({
+  roman: `V7/${roman}`,
+  degree: (target + 4) % 7,
+  shift: 0,
+  quality: 'dom7',
+  hint: (k) => `Dominante secundário: "puxa" para o ${diatonic(k, target)}. Toque ele e depois o ${diatonic(k, target)}.`,
+})
+
+const SECONDARY_DOMINANTS: Extra[] = [
+  secondary(1, 'ii'),
+  secondary(2, 'iii'),
+  secondary(3, 'IV'),
+  secondary(4, 'V'),
+  secondary(5, 'vi'),
+]
+
+const MODAL_BORROWING: Extra[] = [
+  {
+    roman: 'iv',
+    degree: 3,
+    shift: 0,
+    quality: 'min',
+    hint: (k) => `Vem do ${k.major} menor. Som melancólico. Clássico: ${k.scale[3]} → ${k.scale[3]}m → ${k.major}.`,
+  },
+  {
+    roman: 'v',
+    degree: 4,
+    shift: 0,
+    quality: 'min',
+    hint: (k) => `Vem do modo mixolídio. Tira a tensão do ${k.scale[4]}, som mais "solto" e moderno.`,
+  },
+  {
+    roman: '♭VII',
+    degree: 6,
+    shift: -1,
+    quality: 'maj',
+    hint: (k) => `Mixolídio / menor. Muito usado no rock: ${alterNote(k.scale[6], -1)} → ${k.major}.`,
+  },
+  {
+    roman: '♭VI',
+    degree: 5,
+    shift: -1,
+    quality: 'maj',
+    hint: (k) =>
+      `Vem do ${k.major} menor. Som épico: ${alterNote(k.scale[5], -1)} → ${alterNote(k.scale[6], -1)} → ${k.major}.`,
+  },
+  {
+    roman: '♭III',
+    degree: 2,
+    shift: -1,
+    quality: 'maj',
+    hint: (k) => `Vem do ${k.major} menor. Dá um brilho inesperado, comum no rock e no pop.`,
+  },
+  {
+    roman: '♭II',
+    degree: 1,
+    shift: -1,
+    quality: 'maj',
+    hint: (k) => `Acorde napolitano (modo frígio). Dramático, costuma ir para o ${k.scale[4]} ou direto ao ${k.major}.`,
+  },
+]
 
 const R_OUTER = 155
 const R_MID = 105
@@ -49,6 +125,43 @@ export function CircleOfFifths() {
     setPlaying(degree)
     window.setTimeout(() => setPlaying((p) => (p === degree ? null : p)), 250)
   }
+
+  const [extraPlaying, setExtraPlaying] = useState<string | null>(null)
+  const [extraHint, setExtraHint] = useState<{ group: string; text: string } | null>(null)
+
+  const playExtra = (group: string, e: Extra) => {
+    const id = group + e.roman
+    playChord(chordFrequencies(alterNote(key.scale[e.degree], e.shift), e.quality), volume / 100)
+    setExtraPlaying(id)
+    setExtraHint({ group, text: e.hint(key) })
+    window.setTimeout(() => setExtraPlaying((p) => (p === id ? null : p)), 250)
+  }
+
+  const extraGroup = (group: string, title: string, chords: Extra[]) => (
+    <div>
+      <div className="mb-1.5 text-xs uppercase tracking-wide text-zinc-500">{title}</div>
+      <div className="grid gap-1 text-center" style={{ gridTemplateColumns: `repeat(${chords.length}, minmax(0, 1fr))` }}>
+        {chords.map((e) => {
+          const active = extraPlaying === group + e.roman
+          return (
+            <button
+              key={e.roman}
+              type="button"
+              onClick={() => playExtra(group, e)}
+              className={`rounded-lg py-1.5 transition active:scale-95 ${active ? 'bg-amber-500 text-zinc-950' : 'bg-zinc-800'}`}
+            >
+              <div className={`text-[10px] ${active ? 'text-zinc-800' : 'text-zinc-500'}`}>{e.roman}</div>
+              <div className="text-sm font-medium">
+                {alterNote(key.scale[e.degree], e.shift)}
+                {SUFFIX[e.quality]}
+              </div>
+            </button>
+          )
+        })}
+      </div>
+      {extraHint?.group === group && <p className="mt-1.5 text-xs text-zinc-400">{extraHint.text}</p>}
+    </div>
+  )
 
   const fillFor = (i: number, inner: boolean) => {
     if (i === selected) return inner ? 'fill-amber-300' : 'fill-amber-500'
@@ -149,6 +262,8 @@ export function CircleOfFifths() {
             <span className="w-8 text-right tabular-nums">{volume}</span>
           </label>
         </div>
+        {extraGroup('sec', 'Dominantes secundários', SECONDARY_DOMINANTS)}
+        {extraGroup('modal', 'Empréstimo modal', MODAL_BORROWING)}
       </div>
     </div>
   )

@@ -119,6 +119,21 @@ export function scheduleClick(time: number, level: 0 | 1 | 2) {
 }
 
 let chordWave: PeriodicWave | null = null
+let chordLimiter: DynamicsCompressorNode | null = null
+
+// Limiter lets chords be pushed far louder without harsh digital clipping
+function getChordLimiter(ac: AudioContext) {
+  if (!chordLimiter) {
+    chordLimiter = ac.createDynamicsCompressor()
+    chordLimiter.threshold.value = -6
+    chordLimiter.knee.value = 6
+    chordLimiter.ratio.value = 20
+    chordLimiter.attack.value = 0.002
+    chordLimiter.release.value = 0.2
+    chordLimiter.connect(ac.destination)
+  }
+  return chordLimiter
+}
 
 // Piano-like chord: all notes start together and fade out naturally. volume: 0-1
 export function playChord(freqs: number[], volume: number) {
@@ -126,8 +141,9 @@ export function playChord(freqs: number[], volume: number) {
   chordWave ??= ac.createPeriodicWave(new Float32Array(7), Float32Array.from([0, 1, 0.5, 0.3, 0.15, 0.08, 0.04]))
   const t = ac.currentTime
   const master = ac.createGain()
-  master.gain.value = (volume * 0.6) / freqs.length
-  master.connect(ac.destination)
+  // Max is 4x the previous level; the limiter keeps peaks under control
+  master.gain.value = (volume * 2.4) / freqs.length
+  master.connect(getChordLimiter(ac))
   for (const freq of freqs) {
     const osc = ac.createOscillator()
     const gain = ac.createGain()

@@ -34,6 +34,37 @@ export function pitchClass(note: string) {
   return (pc + 12) % 12
 }
 
+const FLAT_NAMES = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'G♭', 'G', 'A♭', 'A', 'B♭', 'B']
+const SHARP_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B']
+
+/** Raise (shift 1) or lower (shift -1) a note by a semitone, keeping its letter when the result reads cleanly. */
+export function alterNote(note: string, shift: number) {
+  if (shift === 0) return note
+  let acc = 0
+  for (const ch of note.slice(1)) acc += ch === '♯' ? 1 : ch === '♭' ? -1 : 0
+  acc += shift
+  const spelled = note[0] + (acc > 0 ? '♯' : '♭').repeat(Math.abs(acc))
+  if (Math.abs(acc) > 1 || ['F♭', 'C♭', 'E♯', 'B♯'].includes(spelled)) {
+    const pc = (pitchClass(note) + shift + 12) % 12
+    return (shift < 0 ? FLAT_NAMES : SHARP_NAMES)[pc]
+  }
+  return spelled
+}
+
+export const CHORD_INTERVALS = {
+  maj: [0, 4, 7],
+  min: [0, 3, 7],
+  dom7: [0, 4, 7, 10],
+} as const
+
+export type ChordQuality = keyof typeof CHORD_INTERVALS
+
+/** Frequencies of a chord built from a root note, root in the C3-B3 octave. */
+export function chordFrequencies(root: string, quality: ChordQuality) {
+  const base = pitchClass(root)
+  return CHORD_INTERVALS[quality].map((i) => 130.81 * 2 ** ((base + i) / 12))
+}
+
 /** Frequencies of a close-position triad on scale degree `degree` (0-6), root in the C3-B3 octave. */
 export function triadFrequencies(scale: string[], degree: number) {
   const notes = [scale[degree], scale[(degree + 2) % 7], scale[(degree + 4) % 7]]
