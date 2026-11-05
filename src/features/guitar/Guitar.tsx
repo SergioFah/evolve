@@ -5,14 +5,17 @@ import { CircleOfFifths } from './CircleOfFifths.tsx'
 import { DayList } from './DayList.tsx'
 import { Metronome } from './Metronome.tsx'
 import { Tuner } from './Tuner.tsx'
+import { FourthsFifthsTrainer, RelativesTrainer } from './Trainers.tsx'
 
-type View = DayKey | 'metronomo' | 'quintas' | 'afinador'
+type View = DayKey | 'metronomo' | 'quintas' | 'relativas' | 'quartas' | 'afinador'
 
 const VIEWS: { id: View; label: string }[] = [
   { id: 'A', label: 'Dia A' },
   { id: 'B', label: 'Dia B' },
   { id: 'metronomo', label: 'Metrônomo' },
   { id: 'quintas', label: 'Quintas' },
+  { id: 'relativas', label: 'Relativas' },
+  { id: 'quartas', label: 'Quartas e quintas' },
   { id: 'afinador', label: 'Afinador' },
 ]
 
@@ -72,6 +75,8 @@ export function Guitar({
         <Metronome settings={metronome} onChange={onMetronomeChange} onPlayingChange={setTicking} />
       </div>
       {view === 'quintas' && <CircleOfFifths />}
+      {view === 'relativas' && <RelativesTrainer />}
+      {view === 'quartas' && <FourthsFifthsTrainer />}
       {view === 'afinador' && <Tuner />}
     </div>
   )
