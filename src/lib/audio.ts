@@ -118,6 +118,30 @@ export function scheduleClick(time: number, level: 0 | 1 | 2) {
   osc.stop(time + 0.06)
 }
 
+let chordWave: PeriodicWave | null = null
+
+// Piano-like chord: all notes start together and fade out naturally. volume: 0-1
+export function playChord(freqs: number[], volume: number) {
+  const ac = audio()
+  chordWave ??= ac.createPeriodicWave(new Float32Array(7), Float32Array.from([0, 1, 0.5, 0.3, 0.15, 0.08, 0.04]))
+  const t = ac.currentTime
+  const master = ac.createGain()
+  master.gain.value = (volume * 0.6) / freqs.length
+  master.connect(ac.destination)
+  for (const freq of freqs) {
+    const osc = ac.createOscillator()
+    const gain = ac.createGain()
+    osc.setPeriodicWave(chordWave)
+    osc.frequency.value = freq
+    gain.gain.setValueAtTime(0.0001, t)
+    gain.gain.exponentialRampToValueAtTime(1, t + 0.01)
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 2.5)
+    osc.connect(gain).connect(master)
+    osc.start(t)
+    osc.stop(t + 2.6)
+  }
+}
+
 // Sustained reference note; harmonics keep low strings audible on phone speakers
 export function startTone(freq: number) {
   const ac = audio()

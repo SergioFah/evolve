@@ -1,5 +1,15 @@
 import { type ReactNode, useState } from 'react'
-import { KEYS } from './keys.ts'
+import { playChord } from '../../lib/audio.ts'
+import { readString, writeString } from '../../lib/storage.ts'
+import { KEYS, triadFrequencies } from './keys.ts'
+
+const VOLUME_KEY = 'evolve:chordVolume'
+
+function savedVolume() {
+  const raw = readString(VOLUME_KEY)
+  const v = Number(raw)
+  return raw !== null && v >= 0 && v <= 100 ? v : 70
+}
 
 const DEGREES = ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°']
 const CHORD_SUFFIX = ['', 'm', 'm', '', '', 'm', 'dim']
@@ -26,6 +36,19 @@ export function CircleOfFifths() {
   const key = KEYS[selected]
   const fourth = KEYS[(selected + 11) % 12]
   const fifth = KEYS[(selected + 1) % 12]
+  const [volume, setVolume] = useState(savedVolume)
+  const [playing, setPlaying] = useState<number | null>(null)
+
+  const changeVolume = (v: number) => {
+    setVolume(v)
+    writeString(VOLUME_KEY, String(v))
+  }
+
+  const play = (degree: number) => {
+    playChord(triadFrequencies(key.scale, degree), volume / 100)
+    setPlaying(degree)
+    window.setTimeout(() => setPlaying((p) => (p === degree ? null : p)), 250)
+  }
 
   const fillFor = (i: number, inner: boolean) => {
     if (i === selected) return inner ? 'fill-amber-300' : 'fill-amber-500'
@@ -93,18 +116,38 @@ export function CircleOfFifths() {
         </Info>
         <Info label="Escala">{key.scale.join(' ')}</Info>
         <div>
-          <div className="mb-1.5 text-xs uppercase tracking-wide text-zinc-500">Campo harmônico</div>
+          <div className="mb-1.5 text-xs uppercase tracking-wide text-zinc-500">Campo harmônico · toque para ouvir</div>
           <div className="grid grid-cols-7 gap-1 text-center">
             {key.scale.map((note, i) => (
-              <div key={DEGREES[i]} className={`rounded-lg py-1.5 ${i === 5 ? 'bg-amber-500/15' : 'bg-zinc-800'}`}>
-                <div className="text-[10px] text-zinc-500">{DEGREES[i]}</div>
+              <button
+                key={DEGREES[i]}
+                type="button"
+                onClick={() => play(i)}
+                className={`rounded-lg py-1.5 transition active:scale-95 ${
+                  playing === i ? 'bg-amber-500 text-zinc-950' : i === 5 ? 'bg-amber-500/15' : 'bg-zinc-800'
+                }`}
+              >
+                <div className={`text-[10px] ${playing === i ? 'text-zinc-800' : 'text-zinc-500'}`}>{DEGREES[i]}</div>
                 <div className="text-sm font-medium">
                   {note}
                   {CHORD_SUFFIX[i] === 'dim' ? '°' : CHORD_SUFFIX[i]}
                 </div>
-              </div>
+              </button>
             ))}
           </div>
+          <label className="mt-3 flex items-center gap-3 text-sm text-zinc-400">
+            Volume
+            <input
+              type="range"
+              aria-label="Volume do acorde"
+              min={0}
+              max={100}
+              value={volume}
+              onChange={(e) => changeVolume(Number(e.target.value))}
+              className="h-2 flex-1 accent-amber-500"
+            />
+            <span className="w-8 text-right tabular-nums">{volume}</span>
+          </label>
         </div>
       </div>
     </div>

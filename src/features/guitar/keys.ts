@@ -21,3 +21,27 @@ export const KEYS: Key[] = [
   { major: 'B♭', minor: 'Gm', majorFull: 'Si♭ maior (B♭)', minorFull: 'Gm', accidentals: '2 bemóis', scale: ['B♭', 'C', 'D', 'E♭', 'F', 'G', 'A'] },
   { major: 'F', minor: 'Dm', majorFull: 'Fá maior (F)', minorFull: 'Dm', accidentals: '1 bemol', scale: ['F', 'G', 'A', 'B♭', 'C', 'D', 'E'] },
 ]
+
+const LETTER_PC: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }
+
+/** Pitch class (0-11) of a note name like "F♯", "B♭", "E♯". */
+export function pitchClass(note: string) {
+  let pc = LETTER_PC[note[0]]
+  for (const ch of note.slice(1)) {
+    if (ch === '♯') pc += 1
+    if (ch === '♭') pc -= 1
+  }
+  return (pc + 12) % 12
+}
+
+/** Frequencies of a close-position triad on scale degree `degree` (0-6), root in the C3-B3 octave. */
+export function triadFrequencies(scale: string[], degree: number) {
+  const notes = [scale[degree], scale[(degree + 2) % 7], scale[(degree + 4) % 7]]
+  let prev = -1
+  return notes.map((note) => {
+    let semis = pitchClass(note)
+    while (semis <= prev) semis += 12
+    prev = semis
+    return 130.81 * 2 ** (semis / 12)
+  })
+}

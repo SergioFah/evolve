@@ -1,17 +1,5 @@
 import { type ReactNode, useState } from 'react'
-import { KEYS } from './keys.ts'
-
-const LETTER_PC: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }
-
-/** Pitch class (0-11) of a note name like "F♯", "B♭", "E♯". */
-function pitchClass(note: string) {
-  let pc = LETTER_PC[note[0]]
-  for (const ch of note.slice(1)) {
-    if (ch === '♯') pc += 1
-    if (ch === '♭') pc -= 1
-  }
-  return (pc + 12) % 12
-}
+import { KEYS, pitchClass } from './keys.ts'
 
 const CHROMATIC = ['C', 'C♯/D♭', 'D', 'D♯/E♭', 'E', 'F', 'F♯/G♭', 'G', 'G♯/A♭', 'A', 'A♯/B♭', 'B']
 
